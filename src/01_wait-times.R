@@ -32,6 +32,7 @@ df1.ed_data <-
          start_date_id >= 20170101, 
          start_date_id < 20190906) %>% 
   select(start_date_id, 
+         start_dt_tm, 
          start_to_admit_elapsed_time_id, 
          start_to_admit_elapsed_time_minutes, 
          start_to_left_ed_elapsed_time_id, 
@@ -40,7 +41,8 @@ df1.ed_data <-
          patient_svc_cd, 
          patient_svc_desc, 
          is_ed_admit_p4p_definition, 
-         first_triage_acuity_cd) %>% 
+         first_triage_acuity_cd, 
+         age_at_start_date) %>% 
   collect()
 
 # str(df1.ed_data)
@@ -50,6 +52,7 @@ df1.ed_data <-
 df2.ed_data_modified <- 
   df1.ed_data %>% 
   mutate(start_date = ymd(start_date_id), 
+         start_hour = ymd_hms(start_dt_tm) %>% hour(), 
          start_year = year(start_date) %>% as.factor, 
          patient_svc_cd = as.factor(patient_svc_cd) ,
          is_admitted = as.factor(is_admitted), 
@@ -65,14 +68,18 @@ df2.ed_data_modified <-
          admit_los = start_to_admit_elapsed_time_minutes, 
          ctas = first_triage_acuity_cd, 
          is_within_p4p = is_ed_admit_p4p_definition) %>% 
+  
   select(start_date, 
+         start_hour, 
+         start_dt_tm, 
          start_date_id,
          start_year, 
          is_admitted, 
          ed_los,
          admit_los, 
          is_within_p4p, 
-         ctas)
+         ctas, 
+         age_at_start_date)
 
 
 str(df2.ed_data_modified)  
@@ -278,6 +285,46 @@ stats::ks.test(v2.nonadmit_2018,
 #' ### Admits
 #' #### Breakdown by CTAS 
 
+df2.ed_data_modified %>% 
+  select(ed_los, 
+         start_year, 
+         is_admitted, 
+         ctas, 
+         is_within_p4p) %>% 
+  filter(ed_los < quantile(ed_los, .99, na.rm = TRUE), 
+         is_admitted == "admitted", 
+         start_year == "2018") %>% 
+  
+  ggplot(aes(x = ed_los)) +
+  geom_density() + 
+  facet_wrap(~ctas + is_within_p4p) + 
+  geom_vline(xintercept = 600, col = "blue") + 
+  labs(title = "LGH ED: Start to disp times in minutes", 
+       subtitle = "Admitted patients, by CTAS and 'is_within_p4p', in 2018")
+
+
+
+#' Does it matter what time you come to ED? 
+#' 
+df2.ed_data_modified %>% 
+  filter(ed_los < quantile(ed_los, .99, na.rm = TRUE), 
+         is_admitted == "admitted", 
+         start_year == "2019") %>% 
+  
+  ggplot(aes(x = start_hour, 
+             y = ed_los)) + 
+  geom_point(alpha = .2) +
+  geom_smooth() + 
+  geom_hline(yintercept = 600, col = "red") + 
+  facet_wrap(~ctas)
+
+#' Here again we see that mixture of 2 distributions for every hour after 8:00 AM  
+#' There's a group of patients who make the 10hr target, and a separate one who don't. 
+#' The distribution of EDLOS for those who don't shifts downwards from 8:00 AM to 
+#' midnight, as the ED becomes less busy. 
+
+
+#' **Is this just the difference between patients who had to wait for a bed vs those who didn't? ** 
 
 
 
