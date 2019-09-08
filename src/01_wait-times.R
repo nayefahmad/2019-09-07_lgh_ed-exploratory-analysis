@@ -10,6 +10,7 @@
 #'     code_folding: show
 #'     toc: true
 #'     toc_float: true
+#'     toc_depth: 4
 #' ---
 
 #+ lib, include = FALSE 
@@ -134,9 +135,17 @@ df2.ed_data_modified %>%
 #' 
 #' 
 
-#' ### Nonadmits
-#' #### Are distributions lognormal and constant across years?  
+#' ### Nonadmits 
+#' #### Are distributions lognormal and constant across years?
 #' Reference: https://miningthedetails.com/blog/r/non-parametric-tests/
+#'
+#' Note that we convert from the mean on lognormal scale to the untransformed
+#' mean using `mean_minutes = exp(logged_mean + logged_variance/2)`
+
+#' To get from the mean on the lognormal scale to the **median** on the
+#' untransformed scale, we use `median_minutes = exp(logged_mean)`
+
+# lognormals -----
 v1.nonadmit_2017 <- 
   df2.ed_data_modified %>% 
   filter(start_year == "2017", 
@@ -204,7 +213,8 @@ data.frame(year = 2018,
            distribution = "lognormal", 
            mean_log_scale = fit_v2$estimate[1] %>% unname, 
            sd_log_scale = fit_v2$estimate[2] %>% unname, 
-           mean_minutes = exp(fit_v2$estimate[1] + (fit_v2$estimate[2]^2) * 1/2)) %>% 
+           mean_minutes = exp(fit_v2$estimate[1] + (fit_v2$estimate[2]^2) * 1/2), 
+           median_minutes = exp(fit_v2$estimate[1])) %>% 
   gather() %>% 
   datatable()
 
@@ -222,9 +232,33 @@ df2.ed_data_modified %>%
   ggplot(aes(x = log(ed_los + 1))) +
   geom_density() + 
   facet_wrap(~start_year + is_admitted) + 
-  # geom_vline(xintercept = 600, col = "blue") + 
-  labs(title = "LGH ED: Start to disp times in minutes")
+  labs(title = "LGH ED: Start to disp times in log(minutes)")
+
+
+#' Testing whether 2018 data could have come from the fitted lognormal: 
+#' 
+stats::ks.test(v2.nonadmit_2018, 
+               "plnorm", 
+               meanlog = 5.15, 
+               sdlog = 0.68, 
+               alternative = "two.sided")
+#' Given very small D-stat, this seems good enough. 
 
 
 #' ### Conclusion
+
+#' There have been minimal changes in this distribution across years. It's
+#' described pretty well as a lognormal.
 #'
+#' **Proposal**: * Every month, use the past month's data as a sample, and find
+#' a confidence interval for the population mean, rather than just a point
+#' estimate.
+#'
+#' * If the CI contains the reference value for the population mean (estimated
+#' by fitting a dist to past year data), then conclude that any differences are
+#' just sampling variability
+#' 
+#' * CI for lognormal dist mean: https://amstat.tandfonline.com/doi/full/10.1080/10691898.2005.11910638#.XXTHtZNKiUk
+#' 
+
+
