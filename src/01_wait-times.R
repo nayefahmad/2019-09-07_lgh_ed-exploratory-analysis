@@ -38,7 +38,9 @@ df1.ed_data <-
          start_to_left_ed_elapsed_time_minutes, 
          is_admitted, 
          patient_svc_cd, 
-         patient_svc_desc) %>% 
+         patient_svc_desc, 
+         is_ed_admit_p4p_definition, 
+         first_triage_acuity_cd) %>% 
   collect()
 
 # str(df1.ed_data)
@@ -50,18 +52,27 @@ df2.ed_data_modified <-
   mutate(start_date = ymd(start_date_id), 
          start_year = year(start_date) %>% as.factor, 
          patient_svc_cd = as.factor(patient_svc_cd) ,
-         is_admitted = as.factor(is_admitted)) %>% 
+         is_admitted = as.factor(is_admitted), 
+         is_ed_admit_p4p_definition = as.factor(is_ed_admit_p4p_definition), 
+         first_triage_acuity_cd = as.factor(first_triage_acuity_cd)) %>% 
+  
+  # recode is_admitted
   mutate(is_admitted = fct_recode(is_admitted, 
                                   not_admitted = "0", 
                                   admitted = "1")) %>% 
+  
   rename(ed_los = start_to_left_ed_elapsed_time_minutes, 
-         admit_los = start_to_admit_elapsed_time_minutes) %>% 
+         admit_los = start_to_admit_elapsed_time_minutes, 
+         ctas = first_triage_acuity_cd, 
+         is_within_p4p = is_ed_admit_p4p_definition) %>% 
   select(start_date, 
          start_date_id,
          start_year, 
          is_admitted, 
          ed_los,
-         admit_los)
+         admit_los, 
+         is_within_p4p, 
+         ctas)
 
 
 str(df2.ed_data_modified)  
@@ -244,13 +255,15 @@ stats::ks.test(v2.nonadmit_2018,
                alternative = "two.sided")
 #' Given very small D-stat, this seems good enough. 
 
-
+#' 
 #' ### Conclusion
 
 #' There have been minimal changes in this distribution across years. It's
 #' described pretty well as a lognormal.
 #'
-#' **Proposal**: * Every month, use the past month's data as a sample, and find
+#' **Proposal**: 
+#' 
+#' * Every month, use the past month's data as a sample, and find
 #' a confidence interval for the population mean, rather than just a point
 #' estimate.
 #'
@@ -260,5 +273,13 @@ stats::ks.test(v2.nonadmit_2018,
 #' 
 #' * CI for lognormal dist mean: https://amstat.tandfonline.com/doi/full/10.1080/10691898.2005.11910638#.XXTHtZNKiUk
 #' 
+
+
+#' ### Admits
+#' #### Breakdown by CTAS 
+
+
+
+
 
 
