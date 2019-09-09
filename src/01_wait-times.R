@@ -270,6 +270,8 @@ stats::ks.test(v2.nonadmit_2018,
 #'
 #' **Proposal**: 
 #' 
+#' **Because we can characterize this dist, we can easily calculate CIs for its mean**
+#' 
 #' * Every month, use the past month's data as a sample, and find
 #' a confidence interval for the population mean, rather than just a point
 #' estimate.
@@ -284,6 +286,7 @@ stats::ks.test(v2.nonadmit_2018,
 
 #' ### Admits
 #' #### Breakdown by CTAS 
+# Analysis for admits: -----
 
 df2.ed_data_modified %>% 
   select(ed_los, 
@@ -316,17 +319,38 @@ df2.ed_data_modified %>%
   geom_point(alpha = .2) +
   geom_smooth() + 
   geom_hline(yintercept = 600, col = "red") + 
-  facet_wrap(~ctas)
+  facet_wrap(~ctas) +
+  labs(title = "2019 ED Admits, by CTAS")
 
-#' Here again we see that mixture of 2 distributions for every hour after 8:00 AM  
-#' There's a group of patients who make the 10hr target, and a separate one who don't. 
-#' The distribution of EDLOS for those who don't shifts downwards from 8:00 AM to 
-#' midnight, as the ED becomes less busy. 
+#' Here again we see that mixture of 2 distributions for every hour after 8:00
+#' AM
+#'
+#' There's a group of patients who make the 10hr target, and a separate one who
+#' don't. The distribution of EDLOS for those who don't shifts downwards from
+#' 8:00 AM to midnight, as the ED becomes less busy.
+#'
+#' **Is this just the difference between patients who had to wait for a bed vs
+#' those who didn't? **
+#'
+#' Or, more cynically, is it that **once someone crosses the 10hour mark, they
+#' cease to be a priority, because, they're already considered a "loss"?** 
 
 
-#' **Is this just the difference between patients who had to wait for a bed vs those who didn't? ** 
-
-
-
-
+hour <- 9  # which hour do we focus on? 
+df2.ed_data_modified %>% 
+  filter(ed_los < quantile(ed_los, .99, na.rm = TRUE), 
+         is_admitted == "admitted", 
+         start_year == "2019", 
+         start_hour == hour) %>%
+  
+  ggplot(aes(x = age_at_start_date, 
+             y = ed_los)) + 
+  geom_point(alpha = .2) +
+  geom_smooth() + 
+  geom_hline(yintercept = 600, col = "red") + 
+  facet_wrap(~ctas) +
+  labs(title = sprintf("2019 ED Admits from hour %i to hour %i, by CTAS", 
+                       hour, 
+                       hour + 1))
+  
 
