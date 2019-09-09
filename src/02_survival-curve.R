@@ -82,6 +82,8 @@ p1.survival <- autoplot(km1,
                      breaks = seq(0, 1, .1)) + 
   scale_x_continuous(expand = c(0, 0), 
                      breaks = seq(0, 50000, 1)) + 
+  geom_vline(xintercept = 10, 
+             col = "grey70") + 
   labs(x = "Time from start in ED (hours)",
        y = "Probability of staying longer than specified time", 
        title = sprintf("LGH ED - Patients arriving on %s", 
@@ -93,16 +95,22 @@ p1.survival <- autoplot(km1,
 
 #' ## How to read this curve
 #'
-#' * The x-axis is time.
+#' [This paper](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3932959/) is a good
+#' general discussion on Kaplan-Meier curves. Here are some specifics related to
+#' the ED LOS context:
+#'
+#' * The x-axis is time, representing ED LOS. On this graph, the exact start
+#' time of a patient doesn't matter, only the ED LOS does.
 #'
 #' * The blue line shows the pattern of patient discharges, according to their
 #' ED LOS. Whenever the line dips downward, that means that a patient was
 #' discharged after spending that amount of time in the ED. This pattern allows
 #' us to choose any LOS cutoff and see how many patients were achieving that
 #' goal. For example, we can ask, *"What proportion of patients had ED LOS < 4
-#' hours"*
+#' hours"* The answer is given by `1 - y`, where `y` is the reading on the
+#' y-axis of the graph
 #'
 #' * Red points represent patients **still in ED**. Although we don't know their
 #' final ED LOS yet, we can track how long they have already been in ED, and use
-#' the blue curve to try to predict how much longer they may be there. 
+#' the blue curve to try to predict how much longer they may be there.
 
