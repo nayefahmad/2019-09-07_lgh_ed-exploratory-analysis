@@ -87,7 +87,9 @@ p1.survival <- autoplot(km1,
   labs(x = "Time from start in ED (hours)",
        y = "Probability of staying longer than specified time", 
        title = sprintf("LGH ED - Patients arriving on %s", 
-                       ymd(today_date))) + 
+                       ymd(today_date)), 
+       subtitle = sprintf("%i patients arrived at the ED so far today", 
+                          nrow(df2.ed_modified))) + 
   theme_light() + 
   theme(panel.grid.minor = element_line(colour="grey95"), 
         panel.grid.major = element_line(colour="grey95")); p1.survival
