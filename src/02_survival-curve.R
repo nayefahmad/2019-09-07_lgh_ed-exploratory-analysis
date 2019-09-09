@@ -110,35 +110,48 @@ p1.survival <- autoplot(km1,
 km2 <- survfit(Surv(ed_los_filled, left_ed) ~ is_admitted, 
                data = df2.ed_modified)
 
+num_admits <- 
+  df2.ed_modified %>% 
+  filter(is_admitted == "admit") %>% 
+  nrow()
 
+if (num_admits < 1){
+  print("No admits so far today")
+  
+} else {
+  p2.survival <- autoplot(km2,
+                          conf.int = FALSE, 
+                          firsty = 1, 
+                          #surv.colour = "skyblue4",
+                          surv.size = 1.5, 
+                          censor.size = 5, 
+                          censor.colour = "firebrick") + 
+    scale_y_continuous(limits = c(0,1), 
+                       expand = c(0, 0), 
+                       breaks = seq(0, 1, .1)) + 
+    scale_x_continuous(expand = c(0, 0), 
+                       breaks = seq(0, 50000, 1)) + 
+    geom_vline(xintercept = 4, 
+               col = "grey70") + 
+    geom_vline(xintercept = 10, 
+               col = "grey70") + 
+    labs(x = "Time from start in ED (hours)",
+         y = "Probability of staying longer than specified time", 
+         title = sprintf("LGH ED - Patients arriving on %s", 
+                         ymd(today_date)), 
+         subtitle = sprintf("%i patients arrived at the ED so far today \n%i patients admitted", 
+                            nrow(df2.ed_modified), 
+                            df2.ed_modified %>% filter(is_admitted == "admit") %>% nrow()), 
+         caption = sprintf("\n\nReport created at %s", 
+                           Sys.time())) + 
+    theme_light() + 
+    theme(panel.grid.minor = element_line(colour="grey95"), 
+          panel.grid.major = element_line(colour="grey95"), 
+          legend.position = "bottom"); p2.survival
+  
+  
+}
 
-p2.survival <- autoplot(km2,
-                        conf.int = FALSE, 
-                        firsty = 1, 
-                        #surv.colour = "skyblue4",
-                        surv.size = 1.5, 
-                        censor.size = 5, 
-                        censor.colour = "firebrick") + 
-  scale_y_continuous(limits = c(0,1), 
-                     expand = c(0, 0), 
-                     breaks = seq(0, 1, .1)) + 
-  scale_x_continuous(expand = c(0, 0), 
-                     breaks = seq(0, 50000, 1)) + 
-  geom_vline(xintercept = 10, 
-             col = "grey70") + 
-  labs(x = "Time from start in ED (hours)",
-       y = "Probability of staying longer than specified time", 
-       title = sprintf("LGH ED - Patients arriving on %s", 
-                       ymd(today_date)), 
-       subtitle = sprintf("%i patients arrived at the ED so far today \n%i patients admitted", 
-                          nrow(df2.ed_modified), 
-                          df2.ed_modified %>% filter(is_admitted == "admit") %>% nrow()), 
-       caption = sprintf("\n\nReport created at %s", 
-                         Sys.time())) + 
-  theme_light() + 
-  theme(panel.grid.minor = element_line(colour="grey95"), 
-        panel.grid.major = element_line(colour="grey95"), 
-        legend.position = "bottom"); p2.survival
 
 
 
