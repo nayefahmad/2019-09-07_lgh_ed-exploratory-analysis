@@ -68,6 +68,7 @@ df2.ed_modified <-
 
 
 #' ## All ED visits 
+#+ model1, message = FALSE
 # survival model 1: -------
 km1 <- survfit(Surv(ed_los_filled, left_ed) ~ 1, 
                data = df2.ed_modified)
@@ -94,7 +95,9 @@ p1.survival <- autoplot(km1,
                        ymd(today_date)), 
        subtitle = sprintf("%i patients arrived at the ED so far today \n%i patients admitted", 
                           nrow(df2.ed_modified), 
-                          df2.ed_modified %>% filter(is_admitted == "admit") %>% nrow())) + 
+                          df2.ed_modified %>% filter(is_admitted == "admit") %>% nrow()), 
+       caption = sprintf("\n\nReport created at %s", 
+                         Sys.time())) + 
   theme_light() + 
   theme(panel.grid.minor = element_line(colour="grey95"), 
         panel.grid.major = element_line(colour="grey95")); p1.survival
@@ -102,6 +105,7 @@ p1.survival <- autoplot(km1,
 
 
 #' ## ED admits vs non-admits 
+#+ model2, message = FALSE
 # survival model 2: -----------
 km2 <- survfit(Surv(ed_los_filled, left_ed) ~ is_admitted, 
                data = df2.ed_modified)
@@ -128,7 +132,9 @@ p2.survival <- autoplot(km2,
                        ymd(today_date)), 
        subtitle = sprintf("%i patients arrived at the ED so far today \n%i patients admitted", 
                           nrow(df2.ed_modified), 
-                          df2.ed_modified %>% filter(is_admitted == "admit") %>% nrow())) + 
+                          df2.ed_modified %>% filter(is_admitted == "admit") %>% nrow()), 
+       caption = sprintf("\n\nReport created at %s", 
+                         Sys.time())) + 
   theme_light() + 
   theme(panel.grid.minor = element_line(colour="grey95"), 
         panel.grid.major = element_line(colour="grey95"), 
