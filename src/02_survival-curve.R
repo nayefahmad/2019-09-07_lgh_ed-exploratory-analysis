@@ -38,7 +38,8 @@ df1.ed_data <-
          start_dt_tm, 
          start_to_left_ed_elapsed_time_minutes, 
          first_triage_acuity_cd, 
-         age_at_start_date) %>% 
+         age_at_start_date, 
+         is_admitted) %>% 
   collect()
 
 # df1.ed_data
@@ -53,18 +54,21 @@ df2.ed_modified <-
          ed_los_filled = case_when(is.na(ed_los) ~ as.numeric(time_now - start_dt_tm, 
                                                               units = "hours"), 
                                    TRUE          ~ as.numeric(ed_los/60)), 
-         left_ed = ifelse(is.na(ed_los), 0, 1)) %>% 
+         left_ed = ifelse(is.na(ed_los), 0, 1), 
+         is_admitted = as.factor(is_admitted) %>% fct_recode(non_admit = "0", 
+                                                             admit = "1")) %>% 
   
   select(start_dt_tm,
          ed_los, 
          ed_los_filled, 
-         left_ed)
+         left_ed, 
+         is_admitted)
 
 # df2.ed_modified
 
 
-
-# survival model: -------
+#' ## All ED visits 
+# survival model 1: -------
 km1 <- survfit(Surv(ed_los_filled, left_ed) ~ 1, 
                data = df2.ed_modified)
 
@@ -88,14 +92,51 @@ p1.survival <- autoplot(km1,
        y = "Probability of staying longer than specified time", 
        title = sprintf("LGH ED - Patients arriving on %s", 
                        ymd(today_date)), 
-       subtitle = sprintf("%i patients arrived at the ED so far today", 
-                          nrow(df2.ed_modified))) + 
+       subtitle = sprintf("%i patients arrived at the ED so far today \n%i patients admitted", 
+                          nrow(df2.ed_modified), 
+                          df2.ed_modified %>% filter(is_admitted == "admit") %>% nrow())) + 
   theme_light() + 
   theme(panel.grid.minor = element_line(colour="grey95"), 
         panel.grid.major = element_line(colour="grey95")); p1.survival
 
 
-#' ## How to read this curve
+
+#' ## ED admits vs non-admits 
+# survival model 2: -----------
+km2 <- survfit(Surv(ed_los_filled, left_ed) ~ is_admitted, 
+               data = df2.ed_modified)
+
+
+
+p2.survival <- autoplot(km2,
+                        conf.int = FALSE, 
+                        firsty = 1, 
+                        #surv.colour = "skyblue4",
+                        surv.size = 1.5, 
+                        censor.size = 5, 
+                        censor.colour = "firebrick") + 
+  scale_y_continuous(limits = c(0,1), 
+                     expand = c(0, 0), 
+                     breaks = seq(0, 1, .1)) + 
+  scale_x_continuous(expand = c(0, 0), 
+                     breaks = seq(0, 50000, 1)) + 
+  geom_vline(xintercept = 10, 
+             col = "grey70") + 
+  labs(x = "Time from start in ED (hours)",
+       y = "Probability of staying longer than specified time", 
+       title = sprintf("LGH ED - Patients arriving on %s", 
+                       ymd(today_date)), 
+       subtitle = sprintf("%i patients arrived at the ED so far today \n%i patients admitted", 
+                          nrow(df2.ed_modified), 
+                          df2.ed_modified %>% filter(is_admitted == "admit") %>% nrow())) + 
+  theme_light() + 
+  theme(panel.grid.minor = element_line(colour="grey95"), 
+        panel.grid.major = element_line(colour="grey95"), 
+        legend.position = "bottom"); p2.survival
+
+
+
+#' ## How to read these curves
 #'
 #' [This paper](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3932959/) is a good
 #' general discussion on Kaplan-Meier curves. Here are some specifics related to
