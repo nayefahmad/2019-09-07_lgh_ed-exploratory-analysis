@@ -88,7 +88,7 @@ p1.survival <- autoplot(km1,
                         surv.size = 1.5, 
                         censor.size = 5, 
                         censor.colour = "firebrick") + 
-  scale_y_continuous(limits = c(0,1), 
+  scale_y_continuous(limits = c(0,1.1), 
                      expand = c(0, 0), 
                      breaks = seq(0, 1, .1)) + 
   scale_x_continuous(expand = c(0, 0), 
@@ -133,7 +133,7 @@ if (num_admits < 1){
                           surv.size = 1.5, 
                           censor.size = 5, 
                           censor.colour = "black") + 
-    scale_y_continuous(limits = c(0,1), 
+    scale_y_continuous(limits = c(0,1.1), 
                        expand = c(0, 0), 
                        breaks = seq(0, 1, .1)) + 
     scale_x_continuous(expand = c(0, 0), 
