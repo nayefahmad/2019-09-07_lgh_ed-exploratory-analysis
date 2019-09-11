@@ -1,6 +1,6 @@
 
 #'--- 
-#' title: "LGH ED - Survival curve"
+#' title: "LGH ED - Visualizing ED LOS with survival curves"
 #' author: "Nayef Ahmad"
 #' date: "2019-09-09"
 #' output: 
@@ -73,7 +73,13 @@ df2.ed_modified <-
 km1 <- survfit(Surv(ed_los_filled, left_ed) ~ 1, 
                data = df2.ed_modified)
 
-
+num_still_in_ed <- 
+  df2.ed_modified %>% 
+  filter(left_ed == 0) %>% 
+  pull %>% 
+  as.numeric() %>% 
+  sum
+  
 
 p1.survival <- autoplot(km1,
                         conf.int = FALSE, 
@@ -93,9 +99,10 @@ p1.survival <- autoplot(km1,
        y = "Probability of staying longer than specified time", 
        title = sprintf("LGH ED - Patients arriving on %s", 
                        ymd(today_date)), 
-       subtitle = sprintf("%i patients arrived at the ED so far today \n%i patients admitted", 
+       subtitle = sprintf("%i patients arrived at the ED so far today \n%i patients admitted \n%i still in ED", 
                           nrow(df2.ed_modified), 
-                          df2.ed_modified %>% filter(is_admitted == "admit") %>% nrow()), 
+                          df2.ed_modified %>% filter(is_admitted == "admit") %>% nrow(), 
+                          num_still_in_ed), 
        caption = sprintf("\n\nReport created at %s", 
                          Sys.time())) + 
   theme_light() + 
@@ -125,7 +132,7 @@ if (num_admits < 1){
                           #surv.colour = "skyblue4",
                           surv.size = 1.5, 
                           censor.size = 5, 
-                          censor.colour = "firebrick") + 
+                          censor.colour = "black") + 
     scale_y_continuous(limits = c(0,1), 
                        expand = c(0, 0), 
                        breaks = seq(0, 1, .1)) + 
@@ -139,9 +146,10 @@ if (num_admits < 1){
          y = "Probability of staying longer than specified time", 
          title = sprintf("LGH ED - Patients arriving on %s", 
                          ymd(today_date)), 
-         subtitle = sprintf("%i patients arrived at the ED so far today \n%i patients admitted", 
+         subtitle = sprintf("%i patients arrived at the ED so far today \n%i patients admitted \n%i still in ED", 
                             nrow(df2.ed_modified), 
-                            df2.ed_modified %>% filter(is_admitted == "admit") %>% nrow()), 
+                            df2.ed_modified %>% filter(is_admitted == "admit") %>% nrow(), 
+                            num_still_in_ed),
          caption = sprintf("\n\nReport created at %s", 
                            Sys.time())) + 
     theme_light() + 
@@ -172,7 +180,39 @@ if (num_admits < 1){
 #' hours"* The answer is given by `1 - y`, where `y` is the reading on the
 #' y-axis of the graph
 #'
-#' * Red points represent patients **still in ED**. Although we don't know their
-#' final ED LOS yet, we can track how long they have already been in ED, and use
-#' the blue curve to try to predict how much longer they may be there.
+#' * Red/black points represent patients **still in ED**. Although we don't know
+#' their final ED LOS yet, we can track how long they have already been in ED,
+#' and use the blue curve to try to predict how much longer they may be there.
+#'
+#'
+#' ## Advantages of the survival curve
+#'
+#' You could get a similar viz by taking all ED LOS, and showing as a bar chart,
+#' arranged from lowest to max LOS. You could use colour to highlight the bars
+#' that are patients still in ED
+#'
+#' I think the survival curve is better because:
+#'
+#' 1. Much easier to compare across days, sites, different timescales, because
+#' the y-axis always standardized to be between 0 and 1.
+#'
+#' 2. Easy to read off percentiles from the y-axis.
+#'
+#' 3. Shape of the graph is not distorted by the censored observations (pts
+#' still in ED). This correctly reflects the fact that we do not yet know their
+#' ED LOS.
+#'
+#' 4. Opens the door for more advanced methods: we can easily get confidence
+#' intervals, log-rank tests to test whether 2 different sites/time periods are
+#' significantly different in terms of their LOS patterns.
+
+
+# output: -----
+ggsave(here::here("results", 
+                  "dst", 
+                  sprintf("%s_lgh_ed-los-survival-curves.pdf", 
+                          Sys.time() %>% gsub(":", ".", .))), 
+       p2.survival)
+             
+
 
